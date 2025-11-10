@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"> <!-- Imposta la codifica UTF-8 per supportare caratteri speciali -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Responsive su dispositivi mobili -->
+  <title>Dettagli Vulcano</title>
+  <style>
+    /* Stile del body */
+    body {
+      font-family: Arial, Helvetica, sans-serif; /* Font sans-serif come nello sketch */
+      background: linear-gradient(120deg, #ffffff, #ffffff); /* Sfondo gradient (bianco) */
+      margin: 0;  /* Rimuove margini di default */
+      padding: 0; /* Rimuove padding di default */
+    }
+
+    /* Box principale */
+    .container {
+      max-width: 800px;  /* Larghezza massima del container */
+      margin: 50px auto; /* Centra il container orizzontalmente con margine verticale */
+      background: #fff;  /* Sfondo bianco */
+      padding: 40px;     /* Spaziatura interna */
+      border-radius: 16px; /* Angoli arrotondati */
+      box-shadow: 0 8px 25px rgb(0, 0, 0); /* Ombra per effetto “card” */
+    }
+
+    /* Titolo vulcano */
+    h1 {
+      color: rgb(0, 0, 0); /* Colore nero */
+      text-align: center;   /* Centra il testo */
+      margin-bottom: 20px;  /* Spazio sotto il titolo */
+      font-size: 2em;       /* Dimensione font */
+    }
+
+    /* Categoria del vulcano */
+    .category {
+      display: inline-block; /* Permette dimensione e padding personalizzato */
+      padding: 6px 12px;     /* Padding interno */
+      border-radius: 12px;   /* Angoli arrotondati */
+      color: #ffffff;        /* Testo bianco */
+      font-weight: bold;     /* Grassetto */
+      margin-bottom: 20px;   /* Margine inferiore */
+      font-size: 0.95em;     /* Dimensione leggermente più piccola */
+    }
+
+    /* Stile dei paragrafi */
+    p {
+      margin: 8px 0; /* Spaziatura verticale tra paragrafi */
+      font-size: 1em;
+    }
+
+    /* Link “torna alla mappa” */
+    a.back {
+      display: inline-block;
+      margin-top: 30px;
+      color: #000000;
+      text-decoration: none; /* Rimuove sottolineatura */
+      font-weight: bold;
+      transition: 0.2s;      /* Effetto transizione colore al passaggio del mouse */
+    }
+    a.back:hover {
+      color: #000000; /* Mantiene il colore al passaggio del mouse */
+    }
+
+    /* Tabella con informazioni aggiuntive */
+    .info-table {
+      width: 100%;             /* Occupare tutta la larghezza del container */
+      border-collapse: collapse; /* Elimina spazi tra celle */
+      margin-top: 20px;        /* Spazio sopra la tabella */
+    }
+
+    /* Celle della tabella */
+    .info-table td {
+      padding: 10px 15px;
+      border-bottom: 1px solid #eee; /* Linea sotto ogni riga */
+    }
+
+    /* Colonna label */
+    .info-table td.label {
+      font-weight: bold;
+      width: 40%; /* Occupa 40% della larghezza */
+      color: #333; /* Colore testo leggermente grigio scuro */
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Titolo del vulcano -->
+    <h1 id="vulcano-name">Caricamento...</h1>
+    <!-- Categoria del vulcano -->
+    <div id="vulcano-category"></div>
+    <!-- Tabella con tutte le informazioni aggiuntive -->
+    <table class="info-table" id="vulcano-info"></table>
+    <!-- Link per tornare alla mappa -->
+    <a href="index.html" class="back">← Torna alla mappa</a>
+  </div>
+
+  <!-- Inclusione p5.js per leggere CSV e usare preload/setup -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script>
+    // --- Funzione per leggere parametri dalla URL ---
+    function getParam(name) {
+      const url = new URL(window.location.href); // Crea un oggetto URL dell’indirizzo corrente
+      return decodeURIComponent(url.searchParams.get(name)); // Legge il parametro e decodifica eventuali caratteri speciali
+    }
+
+    const vulcanoId = getParam('id'); // Prende il parametro 'id' dalla URL
+    let table; // Variabile per contenere il CSV
+
+    // Mappa colori per ogni categoria di vulcano (coerente con il canvas)
+    const categoryColors = {
+      'Stratovolcano': 'red',
+      'Cone': 'orange',
+      'Crater System': 'yellow',
+      'Other / Unknown': 'grey',
+      'Shield Volcano': 'green',
+      'Maars / Tuff ring': 'purple',
+      'Caldera': 'blue',
+      'Submarine Volcano': 'cyan',
+      'Subglacial': 'brown'
+    };
+
+    // --- preload() di p5.js: eseguita prima di setup ---
+    function preload() {
+      table = loadTable('assets/dataset.csv', 'csv', 'header'); 
+      // Carica il CSV con intestazioni, memorizzandolo in table
+    }
+
+    // --- setup() di p5.js: eseguita dopo preload ---
+    function setup() {
+      noCanvas(); // Non serve creare un canvas perché lavoriamo solo con HTML
+
+      // Cerca il vulcano nel CSV
+      let vulcano = null;
+      for (let i = 0; i < table.getRowCount(); i++) {
+        if (table.getString(i, 'Volcano Name') === vulcanoId) {
+          vulcano = table.getRow(i); // Se trovato, salva la riga
+          break; // Esce dal ciclo appena trovato
+        }
+      }
+
+      // Se il vulcano non esiste
+      if (!vulcano) {
+        document.getElementById('vulcano-name').innerText = "Vulcano non trovato";
+        return; // Interrompe l’esecuzione
+      }
+
+      // Mostra il nome del vulcano nel <h1>
+      document.getElementById('vulcano-name').innerText = vulcano.getString('Volcano Name');
+
+      // Mostra categoria con colore
+      const category = vulcano.getString('TypeCategory') || 'Other / Unknown'; // Default se mancante
+      const catDiv = document.getElementById('vulcano-category'); // Div per la categoria
+      const color = categoryColors[category] || 'black'; // Se categoria non trovata, colore nero
+      catDiv.innerHTML = `<span class="category" style="background:${color}">${category}</span>`;
+
+      // Mostra tutte le altre informazioni in tabella
+      const infoTable = document.getElementById('vulcano-info');
+      infoTable.innerHTML = ''; // Pulisce eventuali contenuti precedenti
+
+      for (let col of table.columns) {
+        // Esclude colonne già mostrate (nome e categoria)
+        if (col !== 'Volcano Name' && col !== 'TypeCategory') {
+          let val = vulcano.getString(col) || "N/A"; // Valore della cella o "N/A" se vuoto
+          let row = `<tr><td class="label">${col}</td><td>${val}</td></tr>`; // Crea riga HTML
+          infoTable.innerHTML += row; // Aggiunge riga alla tabella
+        }
+      }
+    }
+  </script>
+</body>
+</html>
